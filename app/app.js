@@ -1,6 +1,7 @@
 import { fetchIncidents, ack } from './api.js';
 
 const REFRESH_MS = 2000; // R4
+const SEVERITIES = new Set(['sev1', 'sev2', 'sev3', 'sev4']);
 
 const list = document.querySelector('[data-testid="incident-list"]');
 const loader = document.querySelector('[data-testid="loader"]');
@@ -22,7 +23,7 @@ function makeRow(i) {
   const li = document.createElement('li');
   li.dataset.testid = 'incident-row';
   li.dataset.id = i.id;
-  li.className = `row ${i.severity}`;
+  li.className = `row ${SEVERITIES.has(i.severity) ? i.severity : "sev-unknown"}`;
   li.innerHTML = `<span class="id">${esc(i.id)}</span>
     <span class="sev">${esc(i.severity)}</span>
     <span class="what">${esc(i.service)} · ${esc(i.region)} · ${esc(i.summary)}</span>
