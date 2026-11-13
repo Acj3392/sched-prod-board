@@ -33,6 +33,16 @@ function makeRow(i) {
   return li;
 }
 
+function updateRow(li, i) {
+  const t = li.querySelector('time');
+  if (t.getAttribute('datetime') !== i.openedAt) {
+    t.setAttribute('datetime', i.openedAt);
+    t.title = i.openedAt;
+    t.textContent = fmt.format(new Date(i.openedAt));
+  }
+  li.querySelector('.what').textContent = `${i.service} · ${i.region} · ${i.summary}`;
+}
+
 function setAction(li, id) {
   const slot = li.querySelector('.act');
   if (acked.has(id)) {
@@ -70,6 +80,8 @@ function render(incidents) {
     if (!li) {
       li = makeRow(i);
       rows.set(i.id, li);
+    } else {
+      updateRow(li, i); // keep the same node so a click in flight still lands on its own row
     }
     if (list.children[idx] !== li) list.insertBefore(li, list.children[idx] || null);
   });
