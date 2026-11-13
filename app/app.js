@@ -70,27 +70,53 @@ function setAction(li, id) {
   slot.replaceChildren(btn);
 }
 
-function render(incidents) {
-  // R1: newest first; new rows go in at the top, existing rows stay the same nodes.
-  const sorted = [...incidents].sort((a, b) => b.openedAt.localeCompare(a.openedAt));
-  const seen = new Set();
-  sorted.forEach((i, idx) => {
-    seen.add(i.id);
-    let li = rows.get(i.id);
-    if (!li) {
-      li = makeRow(i);
-      rows.set(i.id, li);
-    } else {
-      updateRow(li, i); // keep the same node so a click in flight still lands on its own row
-    }
-    if (list.children[idx] !== li) list.insertBefore(li, list.children[idx] || null);
+// Product's decision (after SCHED-4511): the list holds still while it is on screen. New incidents wait
+// behind a "N new" bar and come in only when on-call clicks it. Rows are never removed or moved by a refresh.
+const pending = new Map(); // id -> incident, arrived but not shown yet
+const bar = document.querySelector('[data-testid="new-bar"]');
+let first = true;
+
+const newestFirst = (a, b) => b.openedAt.localeCompare(a.openedAt);
+
+function insertAtTop(incidents) {
+  const fresh = [...incidents].sort(newestFirst).map((i) => {
+    const li = makeRow(i);
+    rows.set(i.id, li);
+    return li;
   });
-  for (const [id, li] of rows) if (!seen.has(id)) { li.remove(); rows.delete(id); }
-  loader.hidden = true; // R3
-  loader.remove?.();
-  empty.hidden = sorted.length > 0;
-  list.hidden = sorted.length === 0;
+  list.prepend(...fresh);
 }
+
+function showBar() {
+  const n = pending.size;
+  bar.hidden = n === 0;
+  bar.textContent = n === 1 ? '1 new incident' : `${n} new incidents`;
+}
+
+function render(incidents) {
+  if (first || rows.size === 0) {
+    insertAtTop(incidents); // R1: newest first on open; an empty board has nothing to move
+    first = false;
+  } else {
+    for (const i of incidents) {
+      const li = rows.get(i.id);
+      if (li) updateRow(li, i); // same node, same place
+      else pending.set(i.id, i); // waits behind the bar
+    }
+  }
+  showBar();
+  loader.hidden = true; // R3
+  empty.hidden = rows.size > 0;
+  list.hidden = rows.size === 0;
+}
+
+bar.addEventListener('click', () => {
+  insertAtTop([...pending.values()]);
+  pending.clear();
+  showBar();
+  empty.hidden = rows.size > 0;
+  list.hidden = rows.size === 0;
+});
 
 async function refresh() {
   try {

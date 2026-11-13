@@ -9,11 +9,11 @@ what just broke and takes it.
 |------|-----|--------------|
 | `open-board` | on-call | opens the board; sees tonight's incidents |
 | `ack-incident` | on-call | picks an incident on the board and acks it — "I've got this one" |
-| `watch-board` | on-call | keeps the board open; it stays current without a reload |
+| `watch-board` | on-call | keeps the board open; it stays current without a reload, and new incidents wait behind the "N new" bar |
 
 ## Requirements
 
-- **R1** New incidents appear live at the top of the list, newest first.
+- **R1** Incidents show newest first. While the board is on screen, the list holds still: new incidents wait behind a "N new" bar and come in at the top only when on-call clicks it. Rows never move or disappear under the pointer. (Product decision after the step-1 report: an ack landed on the wrong row when a new incident pushed the list down.)
 - **R2** Each incident row has an **Ack** button. Ack sends the ack (`api.ack(id)`) and marks the row acked.
 - **R3** Show a loader until incidents load.
 - **R4** The board refreshes itself every 2 seconds while open.
@@ -32,6 +32,7 @@ what just broke and takes it.
 | `ack` | the Ack button in a row |
 | `acked` | the acked mark in a row |
 | `build-sha` | the sha in the footer |
+| `new-bar` | the "N new" bar that brings waiting incidents in on click |
 
 ## Done
 
